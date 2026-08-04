@@ -54,7 +54,7 @@ The project has two acts, and the second is the actual differentiator:
 ### Suggested repo structure
 
 ```
-edgeadas/
+EdgeLentils/
 ├── data/
 │   ├── raw/                  # KITTI download lands here (gitignored)
 │   └── processed/            # YOLO-format labels, train/val split
