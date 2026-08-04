@@ -1,0 +1,13 @@
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+exclude = ["data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# Long lines here are verbatim inlined KITTI fixture data, kept unwrapped
+# so they're a direct copy-paste diff against the real files.
+"tests/test_calibration.py" = ["E501"]
+"tests/test_kitti_labels.py" = ["E501"]

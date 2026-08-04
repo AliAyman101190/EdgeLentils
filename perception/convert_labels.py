@@ -36,6 +36,7 @@ def ensure_images_link() -> None:
             ["cmd", "/c", "mklink", "/J", str(IMAGES_LINK), str(target)],
             capture_output=True,
             text=True,
+            check=False,
         )
         if result.returncode != 0:
             raise RuntimeError(

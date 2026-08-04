@@ -1,0 +1,7 @@
+# Minimal dependency set for GitHub Actions: lint + pytest only.
+# Deliberately separate from requirements.txt, which pulls in the multi-GB
+# torch/CUDA training stack that CI (no GPU) has no use for. Grow this file
+# only when a new pytest module actually imports something not listed here.
+numpy==1.23.5
+pytest
+ruff
