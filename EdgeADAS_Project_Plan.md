@@ -96,12 +96,12 @@ EdgeLentils/
 ## 2. Deliverables Checklist
 
 ### Phase 1 — Data pipeline
-- [ ] KITTI 2D object detection data downloaded (images + labels + calibration files)
-- [ ] KITTI label format converted to YOLO format
-- [ ] Classes filtered/mapped to Car, Pedestrian, Cyclist
-- [ ] Train/val split created (80/20, stratified if feasible)
-- [ ] Calibration parsing utility written and unit tested (reads KITTI's calibration matrices correctly)
-- [ ] Repo skeleton created, first commit pushed
+- [x] KITTI 2D object detection data downloaded (images + labels + calibration files)
+- [x] KITTI label format converted to YOLO format
+- [x] Classes filtered/mapped to Car, Pedestrian, Cyclist
+- [x] Train/val split created — deviated from 80/20: primary split is the published Chen/3DOP 3712/3769 (sequence-disjoint, no temporal leakage across driving sequences); a class-stratified random 80/20 (5985/1496) is kept alongside it to quantify the leakage gap
+- [x] Calibration parsing utility written and unit tested (reads KITTI's calibration matrices correctly)
+- [ ] Repo skeleton created, first commit pushed — skeleton created (`perception/`, `tests/`, `docs/`); commit/push not yet done, pending your go-ahead
 
 ### Phase 2 — Perception model
 - [ ] Training config defined (model size, image resolution, batch size — tuned to fit 4GB VRAM)

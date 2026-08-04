@@ -1,0 +1,18 @@
+# Pinned from the local `yolov8-gpu` conda env (Python 3.10.16), verified against
+# driver 592.27 / CUDA 13.1 on the GTX 1650. See docs/environment.md.
+#
+# torch/torchvision here were installed via conda (pytorch channel, cu121 build).
+# `pip install -r requirements.txt` alone pulls CPU-only wheels for these two —
+# install them separately first with the cu121 index, e.g.:
+#   pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1
+torchvision==0.20.1
+ultralytics==8.3.143
+opencv-python==4.11.0.86
+numpy==1.23.5
+pandas==2.2.3
+pyyaml==6.0.2
+tqdm==4.67.1
+pillow==11.1.0
+requests==2.32.3
+pytest
