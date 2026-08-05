@@ -1,0 +1,38 @@
+# YOLOv8n baseline fine-tune on KITTI (Chen/3DOP split).
+#
+# Run: python -m perception.train --config configs/train_baseline.yaml
+#
+# batch=16 was pinned by a real VRAM probe on this GTX 1650 (4.29 GB), not
+# guessed: peak allocated 3.45 GB / ~3.9 GB reserved at batch=16, safely
+# inside the physical limit. batch=20 already spilled into WDDM shared
+# memory (4.69 GB reserved > 4.29 GB physical) and thrashed rather than
+# failing cleanly — confirmed by that probe taking minutes instead of
+# seconds. Do not raise batch without re-probing.
+model: yolov8n.pt
+data: data/processed/chen.yaml
+
+imgsz: 640 # square; see EdgeADAS_Project_Plan.md Phase 2 for the rect-vs-square analysis
+epochs: 100
+batch: 16
+workers: 3 # Windows DataLoader workers use spawn (no fork), so each one
+# re-imports torch/cv2/ultralytics from scratch — measured at ~342 MB/worker.
+# Free RAM was 0.9 GB when this was first pinned (workers=2 was the ceiling);
+# re-measured at 2.9 GB free just before this run, so one more worker fits
+# with margin. Re-check free RAM before raising this further.
+cache: false # ~5GB RAM caching is still off the table at a few GB free
+
+amp: true # requested, but Ultralytics' own hardware check disables it on
+# this GPU regardless ("AMP: checks failed" — GTX 1650 lacks Tensor Cores);
+# left true so the intent is visible and it engages automatically if this
+# ever runs on different hardware.
+
+seed: 0
+deterministic: true
+optimizer: auto # let Ultralytics pick (AdamW + low LR is typical for a dataset this size)
+
+close_mosaic: 10 # disable mosaic for the final 10 epochs, Ultralytics default
+patience: 30 # stop if val mAP plateaus for 30 epochs; default of 100 would rarely fire
+
+device: 0
+project: runs/detect
+name: baseline

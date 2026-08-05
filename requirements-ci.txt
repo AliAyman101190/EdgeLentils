@@ -3,5 +3,6 @@
 # torch/CUDA training stack that CI (no GPU) has no use for. Grow this file
 # only when a new pytest module actually imports something not listed here.
 numpy==1.23.5
+pyyaml==6.0.2
 pytest
 ruff

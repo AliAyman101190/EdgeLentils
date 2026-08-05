@@ -3,3 +3,5 @@ data/processed/
 __pycache__/
 *.pyc
 .pytest_cache/
+runs/
+*.pt

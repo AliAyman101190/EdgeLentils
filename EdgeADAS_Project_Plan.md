@@ -101,7 +101,7 @@ EdgeLentils/
 - [x] Classes filtered/mapped to Car, Pedestrian, Cyclist
 - [x] Train/val split created — deviated from 80/20: primary split is the published Chen/3DOP 3712/3769 (sequence-disjoint, no temporal leakage across driving sequences); a class-stratified random 80/20 (5985/1496) is kept alongside it to quantify the leakage gap
 - [x] Calibration parsing utility written and unit tested (reads KITTI's calibration matrices correctly)
-- [ ] Repo skeleton created, first commit pushed — skeleton created (`perception/`, `tests/`, `docs/`); commit/push not yet done, pending your go-ahead
+- [x] Repo skeleton created, first commit pushed — skeleton created (`perception/`, `tests/`, `docs/`);
 
 ### Phase 2 — Perception model
 - [ ] Training config defined (model size, image resolution, batch size — tuned to fit 4GB VRAM)
@@ -167,7 +167,7 @@ These are real next steps, not abandoned ideas — but they come *after* the cor
 - **INT8 quantization** — only pays off on hardware with Tensor Cores (cloud GPU or Jetson), so it's paired with one of the two options above, not the GTX 1650 build.
 - **nuScenes / multi-camera / LiDAR fusion extension** — a genuinely harder, different problem (360° multi-sensor fusion, BEV representation) — the natural "v2" if this project leads somewhere, and closer to what valeo.ai's own published research looks like.
 - **Learned lane detection** — replace the classical CV lane pipeline with a lightweight segmentation model, if the classical approach proves too brittle in testing.
-- **ROS2 / BoilerHawk integration** — folding this perception stack into the existing BoilerHawk drone pipeline as a "BoilerHawk 2.0"-style extension, if there's appetite to revisit that project later.
+- **1024x32+ no mosaic training** — Try a higher a resolution for the finetuning pipeline, risk losing the benefits of mosaic augmentation.
 
 ---
 
