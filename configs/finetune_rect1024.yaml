@@ -1,0 +1,51 @@
+# Rect 1024 fine-tune experiment, continuing from the Phase 2 baseline checkpoint
+# (runs/detect/baseline/weights/best.pt, epoch 37) rather than retraining from
+# scratch. See EdgeADAS_Project_Plan.md Phase 2 for the full rationale.
+#
+# Run: python -m perception.train --config configs/finetune_rect1024.yaml
+#
+# Why fine-tune instead of retrain: mosaic and rect=True are mutually exclusive
+# in Ultralytics (rect sorts+fixes batch order for minimal padding; mosaic needs
+# free random sampling into a square canvas — data/dataset.py:218 force-disables
+# mosaic whenever rect=True). Retraining from scratch under rect would forfeit
+# mosaic's augmentation value on only 3712 training images. Fine-tuning the
+# already-converged baseline instead gets mosaic's benefit from Phase A "for
+# free" and only needs a short adaptation phase at the new geometry.
+model: runs/detect/baseline/weights/best.pt
+data: data/processed/chen.yaml
+
+imgsz: 1024
+rect: true # confirmed via direct inspection: produces a single uniform batch
+# shape of 352x1056 across all 232 training batches for this dataset (not
+# exactly the "1024x320" shorthand used during planning, but close, and still
+# fewer pixels/image than square 640 at imgsz=640: 371,712 vs 409,600).
+mosaic: 0.0 # rect=True already forces this to 0 internally; set explicitly so
+# the intent is visible in the config rather than an implicit side effect.
+
+epochs: 30 # short by design: fine-tuning a converged model, not training from scratch
+patience: 15
+batch: 16 # probed: peak 2.72GB allocated / 3.68GB reserved, safely inside the
+# 4.29GB card. batch=24 already spilled into WDDM shared memory (5.88GB
+# reserved) and batch=32 OOM'd outright. Do not raise without re-probing.
+workers: 3
+cache: false
+
+optimizer: AdamW # NOT 'auto' — auto computes lr0 purely from class count
+# (0.002*5/(4+nc) = 0.001429 regardless of starting from a converged model),
+# which would apply baseline-strength updates to a model that's already
+# learned useful weights and risk undoing that. Set explicitly below instead.
+lr0: 0.0003 # baseline's own LR had already decayed to ~0.00092 by epoch 37
+# (its best checkpoint); starting below that but not negligibly so lets the
+# network adapt to the new input geometry without a large disruptive step.
+# A judgment call — revisit if the fine-tune under- or over-shoots.
+lrf: 0.01
+warmup_epochs: 1 # default of 3 is sized for training from random init; this
+# model is already converged and doesn't need a long ramp-up.
+
+seed: 0
+deterministic: true
+
+device: 0
+project: runs/detect
+name: rect1024_finetune # separate from runs/detect/baseline — this is an
+# experiment, not a replacement, until the numbers say otherwise.

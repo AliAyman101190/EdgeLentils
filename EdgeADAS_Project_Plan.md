@@ -104,10 +104,10 @@ EdgeLentils/
 - [x] Repo skeleton created, first commit pushed — skeleton created (`perception/`, `tests/`, `docs/`);
 
 ### Phase 2 — Perception model
-- [ ] Training config defined (model size, image resolution, batch size — tuned to fit 4GB VRAM)
-- [ ] YOLOv8n fine-tuned on the KITTI subset
-- [ ] Baseline mAP@0.5 computed on val set and recorded
-- [ ] Training run is reproducible from a single config file / command
+- [x] Training config defined (model size, image resolution, batch size — tuned to fit 4GB VRAM) — `configs/train_baseline.yaml`; batch=16/workers=3 pinned by a real VRAM+RAM probe, not guessed (see file comments)
+- [x] YOLOv8n fine-tuned on the KITTI subset — 67 epochs (early-stopped, patience=30, best at epoch 37), Chen split only; random-split leakage-comparison run still deferred
+- [x] Baseline mAP@0.5 computed on val set and recorded — overall mAP50=0.569, mAP50-95=0.340. Per-class: Car AP50=0.875 (recall 0.821), Pedestrian AP50=0.518 (recall 0.382), Cyclist AP50=0.315 (recall 0.349). Car matches expectation; Ped/Cyclist are weak, driven by class imbalance (20x fewer Cyclist boxes than Car) and 640-square downscaling hurting small/thin objects — diagnosed, not a bug. Rect-1024 (Section on resolution) is the flagged first fix if this needs revisiting. Full numbers in `metrics.json`.
+- [x] Training run is reproducible from a single config file / command — `python -m perception.train --config configs/train_baseline.yaml`
 
 ### Phase 3 — Auxiliary modules
 - [ ] Distance estimation implemented (bounding box bottom-center + camera calibration + flat-road assumption → real-world distance)
@@ -167,7 +167,11 @@ These are real next steps, not abandoned ideas — but they come *after* the cor
 - **INT8 quantization** — only pays off on hardware with Tensor Cores (cloud GPU or Jetson), so it's paired with one of the two options above, not the GTX 1650 build.
 - **nuScenes / multi-camera / LiDAR fusion extension** — a genuinely harder, different problem (360° multi-sensor fusion, BEV representation) — the natural "v2" if this project leads somewhere, and closer to what valeo.ai's own published research looks like.
 - **Learned lane detection** — replace the classical CV lane pipeline with a lightweight segmentation model, if the classical approach proves too brittle in testing.
-- **1024x32+ no mosaic training** — Try a higher a resolution for the finetuning pipeline, risk losing the benefits of mosaic augmentation.
+- **1024x32+ no mosaic training** — Try a higher a resolution for the finetuning pipeline, risk losing the benefits of mosaic augmentation. *(In progress as of the Phase 2 rect-1024 fine-tune experiment — mosaic loss mitigated by fine-tuning the existing baseline checkpoint at rect 1024 instead of retraining from scratch, rather than skipping mosaic entirely.)*
+- **Class-imbalance mitigation** — Pedestrian/Cyclist AP50 (0.518 / 0.315) lag far behind Car (0.875) largely because Car has 20x more training boxes than Cyclist. If the rect-1024 fine-tune doesn't close this gap on its own, worth trying: class-weighted loss, oversampling rare-class frames, or targeted copy-paste augmentation for Pedestrian/Cyclist. Not implemented now.
+- **Build our own implementation of mosaic outside Ultralytics** — this way we can implement mosaic and get the benefits it offers without having to submit to the
+limitations of Ultralytics when it comes to rectangular images. The whole point of turning off mosaic in rectangle mode is that is keeps the aspect ration ordering
+in place. Since all Kitti images are the same size and aspect ration, we don't need to keep this sorting anyways. The workaround is that we build our own mosaic script and feed it to the Ultrlytics pipeline as normal rectangular images.
 
 ---
 
