@@ -1,0 +1,77 @@
+{
+  "split": "val",
+  "camera_height_m": 1.65,
+  "camera_roll_rad": -0.024434609527920613,
+  "fitted_camera_height_m_diagnostic": 1.7370876047819868,
+  "n_filtered_behind_camera": 4,
+  "n_filtered_above_horizon": 52,
+  "n_near_horizon_low_confidence": 32,
+  "overall": {
+    "count": 19891,
+    "mean_abs_error_m": 11.335519357221141,
+    "median_abs_error_m": 2.8968736577122023,
+    "p90_abs_error_m": 14.594230862714475,
+    "p95_abs_error_m": 23.555479368394224,
+    "p99_abs_error_m": 81.74053177515577
+  },
+  "per_class": {
+    "Car": {
+      "count": 16555,
+      "mean_abs_error_m": 11.037950697900314,
+      "median_abs_error_m": 3.0872860176045833,
+      "p90_abs_error_m": 14.859883604611353,
+      "p95_abs_error_m": 23.95525323642415,
+      "p99_abs_error_m": 84.62290256969399
+    },
+    "Pedestrian": {
+      "count": 2443,
+      "mean_abs_error_m": 14.767035180052252,
+      "median_abs_error_m": 1.4492510276818216,
+      "p90_abs_error_m": 10.414623144113971,
+      "p95_abs_error_m": 18.579888119818328,
+      "p99_abs_error_m": 52.242657085778376
+    },
+    "Cyclist": {
+      "count": 893,
+      "mean_abs_error_m": 7.464361462349793,
+      "median_abs_error_m": 2.7115630607793086,
+      "p90_abs_error_m": 18.854860569621586,
+      "p95_abs_error_m": 27.58228710101532,
+      "p99_abs_error_m": 69.25960587414168
+    }
+  },
+  "per_distance_bucket": {
+    "<10m": {
+      "count": 3338,
+      "mean_abs_error_m": 1.3837824800723884,
+      "median_abs_error_m": 1.1504576208038944,
+      "p90_abs_error_m": 3.0060606674320693,
+      "p95_abs_error_m": 3.4881157372682394,
+      "p99_abs_error_m": 4.564578546601251
+    },
+    "10-25m": {
+      "count": 7428,
+      "mean_abs_error_m": 2.9265977962758334,
+      "median_abs_error_m": 2.2121796063792263,
+      "p90_abs_error_m": 5.363882621738571,
+      "p95_abs_error_m": 7.1107281394815995,
+      "p99_abs_error_m": 21.277919484303258
+    },
+    "25-50m": {
+      "count": 6882,
+      "mean_abs_error_m": 15.441290436649357,
+      "median_abs_error_m": 5.8213835359355635,
+      "p90_abs_error_m": 18.38885336458475,
+      "p95_abs_error_m": 30.525861241728997,
+      "p99_abs_error_m": 87.7003386003663
+    },
+    "50m+": {
+      "count": 2243,
+      "mean_abs_error_m": 41.39546161401977,
+      "median_abs_error_m": 11.974010377836407,
+      "p90_abs_error_m": 43.22887015844468,
+      "p95_abs_error_m": 86.56532690569712,
+      "p99_abs_error_m": 345.2016291784921
+    }
+  }
+}
