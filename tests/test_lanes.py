@@ -3,8 +3,16 @@ import numpy as np
 import pytest
 
 from perception.lanes import (
+    CENTER_PRIOR_LEFT_FRACTION,
+    CENTER_PRIOR_RIGHT_FRACTION,
     MIN_LANE_PIXELS,
+    _center_proximity_score,
+    _coherence_score,
+    _curve_coherence,
+    _find_candidate_columns,
     _lanes_are_plausible,
+    _pair_parallelism_score,
+    _pair_width_score,
     detect_lanes,
     draw_lane_overlay,
     fit_lane_polynomial,
@@ -91,6 +99,125 @@ def test_fit_lane_polynomial_rejects_sparse_noise_pixels():
 
     assert left_fit is None
     assert right_fit is None
+
+
+def test_find_candidate_columns_returns_separated_peaks():
+    histogram = np.zeros(200)
+    histogram[178:192] = 100.0  # one wide dominant feature (fence-like plateau)
+    histogram[50] = 30.0  # smaller, distinct feature (dash-like)
+
+    columns = _find_candidate_columns(histogram, k=3, min_separation_px=20)
+
+    # Both features must be represented; the plateau must not consume
+    # multiple candidate slots with adjacent columns of itself.
+    assert any(abs(c - 50) <= 2 for c in columns)
+    plateau_hits = [c for c in columns if 178 - 20 <= c <= 192 + 20]
+    assert len(plateau_hits) == 1
+
+
+def test_find_candidate_columns_empty_histogram_returns_nothing():
+    assert _find_candidate_columns(np.zeros(200), k=3, min_separation_px=10) == []
+
+
+def test_coherence_score_favors_curve_consistent_candidates():
+    # Measured bands on real frames: genuine boundaries 0.63-0.99, scattered
+    # clutter 0.19-0.53 -- the score must order those correctly and saturate
+    # for clearly-coherent lines.
+    solid_line = _coherence_score(0.95)
+    dashed_line = _coherence_score(0.65)
+    clutter = _coherence_score(0.3)
+
+    assert solid_line == pytest.approx(1.0)  # saturates at/above COHERENCE_FULL_SCORE_AT
+    assert solid_line >= dashed_line > clutter
+    assert clutter > 0.0  # graded, not a disqualifier
+
+
+def test_curve_coherence_measures_tight_band_only():
+    h = 100
+    ys = np.arange(h)
+    # A perfect vertical line at x=50: every row within band -> coherence 1.0
+    xs_on_line = np.full(h, 50.0)
+    fit = np.array([0.0, 0.0, 50.0])
+    assert _curve_coherence(ys, xs_on_line, fit, h) == pytest.approx(1.0)
+
+    # Same rows but pixels far from the fitted curve -> coherence 0.0
+    xs_far = np.full(h, 120.0)
+    assert _curve_coherence(ys, xs_far, fit, h) == pytest.approx(0.0)
+
+
+def test_center_proximity_is_soft_and_monotonic():
+    img_w = 200
+    peak = int(CENTER_PRIOR_LEFT_FRACTION * img_w)
+    at_prior = _center_proximity_score(peak, img_w, "left")
+    nearby = _center_proximity_score(peak + 25, img_w, "left")
+    far = _center_proximity_score(4, img_w, "left")  # extreme edge (guardrail territory)
+
+    assert at_prior == pytest.approx(1.0)
+    assert at_prior > nearby > far
+    assert far > 0.0  # soft: far candidates penalized, never excluded
+
+
+def test_center_proximity_right_side_uses_right_prior():
+    img_w = 200
+    right_peak = int(CENTER_PRIOR_RIGHT_FRACTION * img_w)
+    assert _center_proximity_score(right_peak, img_w, "right") == pytest.approx(1.0)
+    assert _center_proximity_score(right_peak, img_w, "left") < _center_proximity_score(
+        right_peak, img_w, "right"
+    )
+
+
+def test_pair_width_score_prefers_plausible_lane_widths():
+    img_h, img_w = 300, 200
+
+    def pair_at(width_px):
+        left = np.array([0.0, 0.0, 60.0])
+        right = np.array([0.0, 0.0, 60.0 + width_px])
+        return _pair_width_score(left, right, img_h, img_w)
+
+    plausible = pair_at(0.30 * img_w)
+    too_wide = pair_at(0.85 * img_w)  # e.g. one side latched onto a guardrail
+    too_narrow = pair_at(0.05 * img_w)
+
+    assert plausible == pytest.approx(1.0)
+    assert too_wide == 0.0
+    assert too_narrow == 0.0
+    assert 0.0 < pair_at(0.55 * img_w) < 1.0  # graded between plateau and zero
+
+
+def test_pair_parallelism_prefers_constant_width():
+    img_h = 300
+    left = np.array([0.0, 0.0, 50.0])
+    parallel_right = np.array([0.0, 0.0, 150.0])
+    diverging_right = np.array([0.0, 0.4, 90.0])  # width grows ~120px over the image height
+    crossed_right = np.array([0.0, 0.0, 30.0])
+
+    parallel = _pair_parallelism_score(left, parallel_right, img_h)
+    diverging = _pair_parallelism_score(left, diverging_right, img_h)
+    crossed = _pair_parallelism_score(left, crossed_right, img_h)
+
+    assert parallel == pytest.approx(1.0)
+    assert parallel > diverging
+    assert crossed == 0.0
+
+
+def test_fit_lane_polynomial_prefers_dashed_line_over_continuous_edge():
+    # The headline regression for the scoring redesign: a continuous
+    # fence-like edge with MORE total pixels than the dashed lane paint,
+    # in the same half. Raw pixel count (the old argmax search) picks the
+    # fence; the scored search must pick the dashes.
+    h, w = 300, 200
+    binary = np.zeros((h, w), dtype=np.uint8)
+    binary[:, 18:22] = 1  # continuous fence at x~20: 300 rows x 4 cols = 1200 px
+    for y0 in range(0, h, 60):
+        binary[y0 : y0 + 30, 58:62] = 1  # dashed line at x~60: 150 rows x 4 cols = 600 px
+    binary[:, 148:152] = 1  # solid right boundary at x~150 (width 90px = 0.45w from dashes)
+
+    left_fit, right_fit = fit_lane_polynomial(binary)
+
+    assert left_fit is not None
+    assert right_fit is not None
+    assert np.polyval(left_fit, h - 1) == pytest.approx(60, abs=6)  # dashes, not the fence at 20
+    assert np.polyval(right_fit, h - 1) == pytest.approx(150, abs=6)
 
 
 def test_lanes_are_plausible_accepts_parallel_lines():
